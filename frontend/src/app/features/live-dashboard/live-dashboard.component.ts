@@ -59,12 +59,27 @@ interface KpiEntry {
         }
       </section>
 
-      <section class="tick-info">
+      <section class="mb-4">
         @if (lastTick(); as tick) {
-          <div class="tick-row">
-            <span>Tick {{ tick.tick_number }}</span>
-            <span>Active agents: {{ tick.active_agent_ids?.length ?? 0 }}</span>
-            <span>Events: {{ tick.events?.length ?? 0 }}</span>
+          <div class="flex items-center gap-4 bg-base-200 rounded-lg px-4 py-3">
+            <div class="flex items-center gap-2 font-mono font-bold text-primary">
+              <span class="loading loading-ring loading-xs" [class.hidden]="simStatus() === 'completed'"></span>
+              Tick {{ tick.tick_number }} / {{ maxTicks() }}
+            </div>
+            <div class="flex-1">
+              <progress class="progress progress-primary w-full"
+                [value]="tick.tick_number"
+                [max]="maxTicks() || 1">
+              </progress>
+            </div>
+            <span class="text-sm text-base-content/60">{{ tick.active_agent_ids?.length ?? 0 }} agents</span>
+            <span class="text-sm text-base-content/60">{{ tick.events?.length ?? 0 }} events</span>
+            <span class="text-sm text-base-content/60">{{ tick.duration_ms ?? 0 }}ms</span>
+          </div>
+        } @else {
+          <div class="flex items-center gap-3 bg-base-200 rounded-lg px-4 py-3 text-base-content/50">
+            <span class="loading loading-ring loading-xs"></span>
+            Waiting for first tick...
           </div>
         }
       </section>
