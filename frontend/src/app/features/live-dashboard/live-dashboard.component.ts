@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal, effect } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
@@ -15,7 +15,7 @@ interface KpiEntry {
 @Component({
   selector: 'app-live-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="dashboard">
       <header class="dash-header">
@@ -79,10 +79,22 @@ interface KpiEntry {
         } @else {
           <div class="flex items-center gap-3 bg-base-200 rounded-lg px-4 py-3 text-base-content/50">
             <span class="loading loading-ring loading-xs"></span>
-            Waiting for first tick...
+            @if (simStatus() === 'pending') {
+              Preparing agents... simulation will start shortly
+            } @else if (simStatus() === 'running') {
+              Running — waiting for first tick data...
+            } @else {
+              Waiting for first tick...
+            }
           </div>
         }
       </section>
+
+      <div class="flex gap-3 mb-4">
+        <a class="btn btn-outline btn-sm" [routerLink]="['/simulations', simId, 'report']">View Report</a>
+        <a class="btn btn-ghost btn-sm" [routerLink]="['/simulations', simId, 'intervene']">Interventions</a>
+        <a class="btn btn-ghost btn-sm" [routerLink]="['/simulations', simId, 'chat']">Agent Chat</a>
+      </div>
 
       <section class="event-log">
         <h2>Recent Events</h2>
@@ -138,8 +150,23 @@ export class LiveDashboardComponent implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       const msg = this.ws.lastMessage();
-      if (msg?.type === 'tick_complete') {
-        this.processTick(msg.data as Tick);
+      if (msg?.type === 'tick_complete' && msg.tick != null) {
+        const d = msg.data as Record<string, unknown>;
+        const agentCount = Number(d['active_agent_count'] ?? 0);
+        const eventCount = Number(d['event_count'] ?? 0);
+        const durationMs = Number(d['duration_ms'] ?? 0);
+        const kpiValues = (d['kpi_values'] as Record<string, number>) ?? {};
+        // Backend broadcasts a summary — normalize to Tick shape
+        const tick: Tick = {
+          id: '',
+          tick_number: msg.tick,
+          phase: 'complete',
+          active_agent_ids: new Array(agentCount).fill(''),
+          events: [`Tick ${msg.tick}: ${agentCount} agents acted, ${eventCount} events in ${durationMs}ms`],
+          kpi_values: kpiValues,
+          duration_ms: durationMs,
+        };
+        this.processTick(tick);
       }
     });
   }

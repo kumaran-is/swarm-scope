@@ -12,6 +12,8 @@ export class WebSocketService implements OnDestroy {
   private socket: WebSocket | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private currentSimId: string | null = null;
+  private reconnectDelay = 3000;
+  private reconnectAttempts = 0;
 
   connected = signal(false);
   lastMessage = signal<WsMessage | null>(null);
@@ -24,6 +26,8 @@ export class WebSocketService implements OnDestroy {
 
     this.socket.onopen = () => {
       this.connected.set(true);
+      this.reconnectAttempts = 0;
+      this.reconnectDelay = 3000;
     };
 
     this.socket.onmessage = (event) => {
@@ -65,11 +69,14 @@ export class WebSocketService implements OnDestroy {
 
   private scheduleReconnect(): void {
     if (this.currentSimId) {
+      this.reconnectAttempts++;
+      // Exponential backoff: 3s, 6s, 12s, max 30s
+      this.reconnectDelay = Math.min(3000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
       this.reconnectTimer = setTimeout(() => {
         if (this.currentSimId) {
           this.connect(this.currentSimId);
         }
-      }, 3000);
+      }, this.reconnectDelay);
     }
   }
 

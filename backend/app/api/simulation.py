@@ -197,6 +197,7 @@ async def get_agent_ego_network(
 async def _run_simulation_task(sim_id: uuid.UUID) -> None:
     from app.dependencies import get_session_factory
     from app.engine.orchestrator import SimulationOrchestrator
+    from app.api.ws import broadcast
 
     factory = get_session_factory()
     async with factory() as db:
@@ -205,7 +206,7 @@ async def _run_simulation_task(sim_id: uuid.UUID) -> None:
         if not run:
             logger.error("Simulation run %s not found in background task", sim_id)
             return
-        orch = SimulationOrchestrator(db=db)
+        orch = SimulationOrchestrator(db=db, broadcast_fn=broadcast)
         await orch.run_simulation(run)
 
 

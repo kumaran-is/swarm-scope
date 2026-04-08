@@ -1,6 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subscription, interval } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { ScenarioService, Scenario } from '../../core/services/scenario.service';
 
 @Component({
@@ -116,13 +118,14 @@ import { ScenarioService, Scenario } from '../../core/services/scenario.service'
     </div>
   `,
 })
-export class ScenarioLibraryComponent implements OnInit {
+export class ScenarioLibraryComponent implements OnInit, OnDestroy {
   private svc = inject(ScenarioService);
   private router = inject(Router);
 
   scenarios = signal<Scenario[]>([]);
   loading = signal(false);
   confirmDeleteId = signal<string | null>(null);
+  private pollSub?: Subscription;
 
   searchQuery = '';
   filterDomain = '';
@@ -149,6 +152,17 @@ export class ScenarioLibraryComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    // Poll every 5s to pick up status changes (compiling → compiled, generating → ready)
+    this.pollSub = interval(5000).pipe(
+      switchMap(() => this.svc.list()),
+    ).subscribe({
+      next: (s) => { this.scenarios.set(s); this.applyFilters(); },
+      error: () => {},
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.pollSub?.unsubscribe();
   }
 
   load(): void {
