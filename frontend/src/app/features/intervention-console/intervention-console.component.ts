@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InterventionService, Intervention } from '../../core/services/intervention.service';
@@ -16,9 +16,16 @@ interface InterventionForm {
 @Component({
   selector: 'app-intervention-console',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="console">
+      <div class="breadcrumbs text-sm mb-4">
+        <ul>
+          <li><a [routerLink]="['/scenarios']">Scenarios</a></li>
+          <li><a [routerLink]="['/simulations', simId, 'dashboard']">Live Dashboard</a></li>
+          <li>Interventions</li>
+        </ul>
+      </div>
       <h1>Intervention Console</h1>
       <p class="subtitle">Sim {{ simId }}</p>
 

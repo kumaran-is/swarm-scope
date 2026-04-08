@@ -1,21 +1,28 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Subscription, interval } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { ReportService, Report } from '../../core/services/report.service';
 
 @Component({
   selector: 'app-report-viewer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="report-container">
+      <div class="breadcrumbs text-sm mb-4">
+        <ul>
+          <li><a [routerLink]="['/scenarios']">Scenarios</a></li>
+          <li><a [routerLink]="['/simulations', simId, 'dashboard']">Live Dashboard</a></li>
+          <li>Report</li>
+        </ul>
+      </div>
       <header class="report-header">
         <h1>Simulation Report</h1>
         <span class="sim-id">Sim {{ simId }}</span>
-        @if (!report() && !loading()) {
-          <button class="generate-btn" (click)="generate()" [disabled]="generating()">
-            {{ generating() ? 'Generating…' : 'Generate Report' }}
-          </button>
+        @if (report()) {
+          <button class="btn btn-outline btn-sm" (click)="generate()">Regenerate</button>
         }
       </header>
 
@@ -67,14 +74,21 @@ import { ReportService, Report } from '../../core/services/report.service';
         }
 
         <p class="generated-at">Generated: {{ r.created_at | date: 'medium' }}</p>
+      } @else if (generating()) {
+        <div class="no-report">
+          <span class="loading loading-spinner loading-lg text-primary"></span>
+          <p class="text-base-content/60">Generating report with Gemini AI…</p>
+          <p class="text-sm text-base-content/40">This takes 30–60 seconds. Check {{ pollAttempts() }}/24.</p>
+        </div>
       } @else if (error()) {
-        <p class="error">{{ error() }}</p>
+        <div class="no-report">
+          <p class="error">{{ error() }}</p>
+          <button class="btn btn-primary" (click)="generate()">Try Again</button>
+        </div>
       } @else {
         <div class="no-report">
           <p>No report generated yet.</p>
-          <button class="generate-btn" (click)="generate()" [disabled]="generating()">
-            {{ generating() ? 'Generating…' : 'Generate Report' }}
-          </button>
+          <button class="btn btn-primary" (click)="generate()">Generate Report</button>
         </div>
       }
     </div>
@@ -100,7 +114,7 @@ import { ReportService, Report } from '../../core/services/report.service';
     .no-report { text-align: center; padding: 3rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; color: #888; }
   `],
 })
-export class ReportViewerComponent implements OnInit {
+export class ReportViewerComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private reportService = inject(ReportService);
 
@@ -109,10 +123,17 @@ export class ReportViewerComponent implements OnInit {
   loading = signal(false);
   generating = signal(false);
   error = signal('');
+  pollAttempts = signal(0);
+
+  private pollSub?: Subscription;
 
   ngOnInit(): void {
     this.simId = this.route.snapshot.paramMap.get('id') ?? '';
     this.loadReport();
+  }
+
+  ngOnDestroy(): void {
+    this.pollSub?.unsubscribe();
   }
 
   loadReport(): void {
@@ -126,11 +147,30 @@ export class ReportViewerComponent implements OnInit {
   generate(): void {
     this.generating.set(true);
     this.error.set('');
+    this.pollAttempts.set(0);
     this.reportService.generate(this.simId).subscribe({
       next: () => {
-        this.generating.set(false);
-        // Poll after a delay for the generated report
-        setTimeout(() => this.loadReport(), 3000);
+        // Poll every 5s for up to 2 minutes (24 attempts)
+        this.pollSub?.unsubscribe();
+        this.pollSub = interval(5000).pipe(
+          takeWhile(() => !this.report() && this.pollAttempts() < 24),
+        ).subscribe(() => {
+          this.pollAttempts.update(n => n + 1);
+          this.reportService.get(this.simId).subscribe({
+            next: (r) => {
+              this.generating.set(false);
+              this.report.set(r);
+              this.pollSub?.unsubscribe();
+            },
+            error: () => {
+              // 404 means still generating — keep polling
+              if (this.pollAttempts() >= 24) {
+                this.generating.set(false);
+                this.error.set('Report generation timed out. Try again.');
+              }
+            },
+          });
+        });
       },
       error: (err: Error) => {
         this.generating.set(false);

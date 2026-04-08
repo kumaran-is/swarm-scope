@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgentService, Agent, ChatMessage } from '../../core/services/agent.service';
@@ -7,10 +7,17 @@ import { AgentService, Agent, ChatMessage } from '../../core/services/agent.serv
 @Component({
   selector: 'app-agent-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="chat-layout">
       <aside class="agent-list">
+        <div class="breadcrumbs text-xs px-2 pt-2 pb-1">
+          <ul>
+            <li><a [routerLink]="['/scenarios']">Scenarios</a></li>
+            <li><a [routerLink]="['/simulations', simId, 'dashboard']">Dashboard</a></li>
+            <li>Chat</li>
+          </ul>
+        </div>
         <h2>Agents</h2>
         @for (agent of agents(); track agent.id) {
           <button
