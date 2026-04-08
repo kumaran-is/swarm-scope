@@ -1,6 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthState } from '../../core/state/auth.state';
@@ -8,47 +7,52 @@ import { AuthState } from '../../core/state/auth.state';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink],
   template: `
-    <div class="auth-container">
-      <div class="auth-card">
-        <h1>SwarmScope</h1>
-        <p class="subtitle">Sign in to your account</p>
+    <div class="min-h-[80vh] flex items-center justify-center">
+      <div class="card w-full max-w-md bg-base-200 shadow-xl border border-base-300">
+        <div class="card-body gap-4">
+          <div class="text-center mb-2">
+            <h1 class="text-3xl font-bold text-primary">SwarmScope</h1>
+            <p class="text-base-content/60 text-sm mt-1">Sign in to your account</p>
+          </div>
 
-        <form (ngSubmit)="login()">
-          <label>Email
-            <input type="email" [(ngModel)]="email" name="email" required autocomplete="email" />
-          </label>
-          <label>Password
-            <input type="password" [(ngModel)]="password" name="password" required autocomplete="current-password" />
-          </label>
+          <fieldset class="fieldset">
+            <label class="fieldset-label">Email</label>
+            <input class="input input-bordered w-full"
+              type="email" [(ngModel)]="email" name="email"
+              placeholder="you@example.com" autocomplete="email" />
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <label class="fieldset-label">Password</label>
+            <input class="input input-bordered w-full"
+              type="password" [(ngModel)]="password" name="password"
+              placeholder="••••••••" autocomplete="current-password" />
+          </fieldset>
+
           @if (error()) {
-            <p class="error">{{ error() }}</p>
+            <div class="alert alert-error text-sm py-2">
+              <span>{{ error() }}</span>
+            </div>
           }
-          <button type="submit" [disabled]="loading()">
-            {{ loading() ? 'Signing in…' : 'Sign In' }}
-          </button>
-        </form>
 
-        <p class="link">Don't have an account? <a routerLink="/auth/register">Register</a></p>
+          <button class="btn btn-primary w-full mt-2"
+            (click)="login()" [disabled]="!email || !password || loading()">
+            @if (loading()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            }
+            {{ loading() ? 'Signing in\u2026' : 'Sign In' }}
+          </button>
+
+          <p class="text-center text-sm text-base-content/60">
+            Don't have an account?
+            <a routerLink="/auth/register" class="link link-primary ml-1">Register</a>
+          </p>
+        </div>
       </div>
     </div>
   `,
-  styles: [`
-    .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0a0a14; }
-    .auth-card { background: #1e1e2e; border-radius: 12px; padding: 2.5rem; width: 100%; max-width: 400px; }
-    h1 { text-align: center; margin-bottom: 0.25rem; }
-    .subtitle { text-align: center; color: #888; margin-bottom: 2rem; font-size: 0.9rem; }
-    form { display: flex; flex-direction: column; gap: 1rem; }
-    label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; color: #ccc; }
-    input { background: #0a0a14; border: 1px solid #444; border-radius: 6px; padding: 0.6rem 0.75rem; color: #fff; font-size: 1rem; }
-    input:focus { outline: none; border-color: #7c3aed; }
-    button[type="submit"] { background: #7c3aed; color: #fff; border: none; border-radius: 6px; padding: 0.75rem; cursor: pointer; font-size: 1rem; margin-top: 0.5rem; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .error { color: #f44336; font-size: 0.85rem; }
-    .link { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #888; }
-    a { color: #7c3aed; text-decoration: none; }
-  `],
 })
 export class LoginComponent {
   private api = inject(ApiService);
@@ -64,12 +68,10 @@ export class LoginComponent {
     if (!this.email || !this.password) return;
     this.loading.set(true);
     this.error.set('');
-
-    const formData = new FormData();
-    formData.append('username', this.email);
-    formData.append('password', this.password);
-
-    this.api.postForm<{ access_token: string; refresh_token: string }>('/auth/token', formData).subscribe({
+    this.api.post<{ access_token: string; refresh_token: string }>('/auth/token', {
+      email: this.email,
+      password: this.password,
+    }).subscribe({
       next: (res) => {
         this.authState.setTokens(res.access_token, res.refresh_token);
         this.loading.set(false);

@@ -1,1 +1,16 @@
-/* You can add global styles to this file, and also import other style files */
+@use "tailwindcss";
+@plugin "daisyui" {
+  themes: dark --default, light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  @apply bg-base-100 text-base-content min-h-screen;
+}

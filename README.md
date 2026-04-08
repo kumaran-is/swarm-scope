@@ -1,5 +1,14 @@
 # SwarmScope — Scenario Simulation Lab
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/swarm-scope)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
+[![Angular 21](https://img.shields.io/badge/angular-21-red.svg)](https://angular.dev/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-3.0%20Pro-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.135+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
 A multi-agent scenario simulation platform powered by Google Gemini. Upload a source document, compile a world model, spawn an agent population, and watch them interact across hundreds of ticks — with real-time dashboards, interventions, surveys, ensemble statistics, and AI-generated reports.
 
 ---

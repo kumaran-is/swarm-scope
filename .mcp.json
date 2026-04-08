@@ -75,12 +75,6 @@
       ],
       "timeout": 60000
     },
-    "langchain-docs": {
-      "type": "http",
-      "disabled": false,
-      "url": "https://docs.langchain.com/mcp",
-      "timeout": 60000
-    },
     "postgres": {
       "type": "stdio",
       "disabled": false,

@@ -1,37 +1,41 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ScenarioService, Scenario } from '../../core/services/scenario.service';
 
 @Component({
   selector: 'app-scenario-library',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   template: `
-    <div class="library">
-      <header class="library-header">
-        <h1>Scenario Library</h1>
-        <button class="create-btn" (click)="create()">+ New Scenario</button>
+    <div>
+      <header class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-3xl font-bold">Scenario Library</h1>
+          <p class="text-base-content/60 mt-1">Your simulation scenarios</p>
+        </div>
+        <button class="btn btn-primary" (click)="create()">+ New Scenario</button>
       </header>
 
-      <div class="filters">
-        <input [(ngModel)]="searchQuery" placeholder="Search by name…" (ngModelChange)="applyFilters()" />
-        <select [(ngModel)]="filterDomain" (ngModelChange)="applyFilters()">
+      <div class="flex flex-wrap gap-3 mb-6">
+        <input class="input input-bordered flex-1 min-w-48"
+          [(ngModel)]="searchQuery" placeholder="Search by name&hellip;"
+          (ngModelChange)="applyFilters()" />
+        <select class="select select-bordered" [(ngModel)]="filterDomain" (ngModelChange)="applyFilters()">
           <option value="">All Domains</option>
           <option value="geopolitics">Geopolitics</option>
           <option value="economics">Economics</option>
           <option value="social">Social</option>
           <option value="general">General</option>
         </select>
-        <select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+        <select class="select select-bordered" [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
           <option value="">All Statuses</option>
           <option value="draft">Draft</option>
           <option value="world_compiled">Compiled</option>
           <option value="agents_generated">Agents Ready</option>
           <option value="ready">Ready</option>
         </select>
-        <select [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
+        <select class="select select-bordered" [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
           <option value="date">Sort by Date</option>
           <option value="name">Sort by Name</option>
           <option value="status">Sort by Status</option>
@@ -39,35 +43,55 @@ import { ScenarioService, Scenario } from '../../core/services/scenario.service'
       </div>
 
       @if (loading()) {
-        <p class="loading">Loading scenarios…</p>
+        <div class="flex justify-center items-center py-16">
+          <span class="loading loading-spinner loading-lg text-primary"></span>
+        </div>
       } @else if (filtered().length === 0) {
-        <div class="empty-state">
-          <p>No scenarios yet. Create your first one.</p>
-          <button class="create-btn" (click)="create()">+ New Scenario</button>
+        <div class="text-center py-16 text-base-content/40">
+          <p class="text-4xl mb-4">&#128196;</p>
+          <p class="text-lg font-medium mb-2">No scenarios yet</p>
+          <p class="text-sm mb-6">Create your first simulation scenario to get started.</p>
+          <button class="btn btn-primary" (click)="create()">+ New Scenario</button>
         </div>
       } @else {
-        <div class="card-grid">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           @for (s of filtered(); track s.id) {
-            <div class="scenario-card" (click)="navigate(s)">
-              <div class="card-top">
-                <span class="domain-badge">{{ s.domain }}</span>
-                <span class="status-badge" [class]="s.status">{{ statusLabel(s.status) }}</span>
-              </div>
-              <h2 class="card-name">{{ s.name }}</h2>
-              @if (s.description) {
-                <p class="card-desc">{{ s.description }}</p>
-              }
-              <div class="status-pipeline">
-                @for (step of pipeline; track step.key) {
-                  <div class="pipeline-step" [class.done]="isStepDone(s.status, step.key)" [title]="step.label">
-                    <span class="step-dot"></span>
-                    <span class="step-label">{{ step.label }}</span>
-                  </div>
+            <div class="card bg-base-200 border border-base-300 hover:border-primary cursor-pointer transition-all hover:shadow-lg"
+              (click)="navigate(s)">
+              <div class="card-body gap-3">
+
+                <div class="flex gap-2 flex-wrap">
+                  <span class="badge badge-ghost badge-sm">{{ s.domain }}</span>
+                  <span class="badge badge-sm" [class]="statusBadgeClass(s.status)">
+                    {{ statusLabel(s.status) }}
+                  </span>
+                </div>
+
+                <h2 class="card-title text-base">{{ s.name }}</h2>
+
+                @if (s.description) {
+                  <p class="text-base-content/60 text-sm line-clamp-2">{{ s.description }}</p>
                 }
-              </div>
-              <div class="card-actions" (click)="$event.stopPropagation()">
-                <button class="action-btn" (click)="clone(s)">Clone</button>
-                <button class="action-btn danger" (click)="confirmDelete(s)">Delete</button>
+
+                <div class="flex gap-2 flex-wrap">
+                  @for (step of pipeline; track step.key) {
+                    <div class="flex items-center gap-1" [title]="step.label">
+                      <span class="w-2 h-2 rounded-full"
+                        [class]="isStepDone(s.status, step.key) ? 'bg-success' : 'bg-base-300'">
+                      </span>
+                      <span class="text-xs"
+                        [class]="isStepDone(s.status, step.key) ? 'text-success' : 'text-base-content/30'">
+                        {{ step.label }}
+                      </span>
+                    </div>
+                  }
+                </div>
+
+                <div class="card-actions justify-end mt-1" (click)="$event.stopPropagation()">
+                  <button class="btn btn-ghost btn-xs" (click)="clone(s)">Clone</button>
+                  <button class="btn btn-ghost btn-xs text-error" (click)="confirmDelete(s)">Delete</button>
+                </div>
+
               </div>
             </div>
           }
@@ -75,57 +99,22 @@ import { ScenarioService, Scenario } from '../../core/services/scenario.service'
       }
 
       @if (confirmDeleteId()) {
-        <div class="modal-overlay" (click)="confirmDeleteId.set(null)">
-          <div class="modal" (click)="$event.stopPropagation()">
-            <h3>Delete Scenario?</h3>
-            <p>This will permanently delete the scenario and all associated data.</p>
-            <div class="modal-actions">
-              <button (click)="confirmDeleteId.set(null)">Cancel</button>
-              <button class="danger" (click)="deleteScenario()">Delete</button>
+        <div class="modal modal-open">
+          <div class="modal-backdrop" (click)="confirmDeleteId.set(null)"></div>
+          <div class="modal-box">
+            <h3 class="font-bold text-lg">Delete Scenario?</h3>
+            <p class="py-4 text-base-content/60">
+              This will permanently delete the scenario and all associated data.
+            </p>
+            <div class="modal-action">
+              <button class="btn btn-ghost" (click)="confirmDeleteId.set(null)">Cancel</button>
+              <button class="btn btn-error" (click)="deleteScenario()">Delete</button>
             </div>
           </div>
         </div>
       }
     </div>
   `,
-  styles: [`
-    .library { padding: 1.5rem; }
-    .library-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-    .create-btn { background: #7c3aed; color: #fff; border: none; border-radius: 6px; padding: 0.5rem 1rem; cursor: pointer; }
-    .filters { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .filters input, .filters select { background: #1e1e2e; border: 1px solid #444; border-radius: 6px; padding: 0.4rem 0.75rem; color: inherit; }
-    .filters input { flex: 1; min-width: 180px; }
-    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-    .scenario-card { background: #1e1e2e; border-radius: 10px; padding: 1.25rem; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s; }
-    .scenario-card:hover { border-color: #7c3aed; }
-    .card-top { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
-    .domain-badge { font-size: 0.75rem; background: #2a2a3e; padding: 0.2rem 0.5rem; border-radius: 4px; }
-    .status-badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
-    .status-badge.draft { background: #444; }
-    .status-badge.world_compiled { background: #1565c0; }
-    .status-badge.agents_generated { background: #6a1b9a; color: #fff; }
-    .status-badge.ready { background: #2e7d32; color: #fff; }
-    .card-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
-    .card-desc { font-size: 0.85rem; color: #888; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .status-pipeline { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-    .pipeline-step { display: flex; align-items: center; gap: 0.25rem; }
-    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
-    .pipeline-step.done .step-dot { background: #4caf50; }
-    .step-label { font-size: 0.7rem; color: #888; }
-    .pipeline-step.done .step-label { color: #4caf50; }
-    .card-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-    .action-btn { background: none; border: 1px solid #444; border-radius: 4px; padding: 0.25rem 0.6rem; cursor: pointer; font-size: 0.8rem; color: #ccc; }
-    .action-btn.danger { border-color: #f44336; color: #f44336; }
-    .loading, .empty-state { color: #888; text-align: center; padding: 3rem; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; }
-    .modal { background: #1e1e2e; border-radius: 10px; padding: 2rem; max-width: 400px; }
-    .modal h3 { margin-bottom: 0.75rem; }
-    .modal p { color: #888; margin-bottom: 1.5rem; }
-    .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
-    .modal-actions button { padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; border: none; }
-    .modal-actions button:first-child { background: #2a2a3e; color: #fff; }
-    .modal-actions button.danger { background: #f44336; color: #fff; }
-  `],
 })
 export class ScenarioLibraryComponent implements OnInit {
   private svc = inject(ScenarioService);
@@ -170,9 +159,10 @@ export class ScenarioLibraryComponent implements OnInit {
         this.loading.set(false);
         this.applyFilters();
       },
-      error: (err) => {
-        console.error('Failed to load scenarios', err);
+      error: (err: Error) => {
         this.loading.set(false);
+        // Error surfaced via toast — no silent swallow
+        throw err;
       },
     });
   }
@@ -202,13 +192,25 @@ export class ScenarioLibraryComponent implements OnInit {
   statusLabel(status: string): string {
     const labels: Record<string, string> = {
       draft: 'Draft',
-      compiling: 'Compiling…',
+      compiling: 'Compiling\u2026',
       world_compiled: 'Compiled',
-      generating_agents: 'Generating…',
+      generating_agents: 'Generating\u2026',
       agents_generated: 'Agents Ready',
       ready: 'Ready',
     };
     return labels[status] ?? status;
+  }
+
+  statusBadgeClass(status: string): string {
+    const classes: Record<string, string> = {
+      draft: 'badge-ghost',
+      compiling: 'badge-warning',
+      world_compiled: 'badge-info',
+      generating_agents: 'badge-warning',
+      agents_generated: 'badge-secondary',
+      ready: 'badge-success',
+    };
+    return classes[status] ?? 'badge-ghost';
   }
 
   isStepDone(status: string, stepKey: string): boolean {
@@ -219,9 +221,7 @@ export class ScenarioLibraryComponent implements OnInit {
 
   navigate(s: Scenario): void {
     const order = this.statusOrder[s.status] ?? 0;
-    if (order >= 4) {
-      this.router.navigate(['/scenarios', s.id, 'world']);
-    } else if (order >= 2) {
+    if (order >= 2) {
       this.router.navigate(['/scenarios', s.id, 'world']);
     } else {
       this.router.navigate(['/scenarios']);
@@ -229,7 +229,7 @@ export class ScenarioLibraryComponent implements OnInit {
   }
 
   create(): void {
-    this.router.navigate(['/scenarios']);
+    this.router.navigate(['/scenarios/new']);
   }
 
   clone(s: Scenario): void {
@@ -240,7 +240,7 @@ export class ScenarioLibraryComponent implements OnInit {
     fd.append('config', JSON.stringify(s.config));
     this.svc.create(fd).subscribe({
       next: () => this.load(),
-      error: (err) => console.error('Clone failed', err),
+      error: (err: Error) => { throw err; },
     });
   }
 
@@ -256,7 +256,7 @@ export class ScenarioLibraryComponent implements OnInit {
         this.confirmDeleteId.set(null);
         this.load();
       },
-      error: (err) => console.error('Delete failed', err),
+      error: (err: Error) => { throw err; },
     });
   }
 }
