@@ -53,8 +53,15 @@ class GeminiRateLimiter:
             self._requests_this_window = 0
 
     async def acquire(self, estimated_tokens: int = 1000) -> None:
-        """Wait if we're approaching rate limits."""
+        """Wait if we're approaching rate limits. Raise if budget is exhausted."""
         self._reset_window_if_needed()
+
+        if self._total_cost_usd >= self.budget_per_run_usd:
+            raise RuntimeError(
+                f"Gemini budget cap reached: ${self._total_cost_usd:.4f} >= "
+                f"${self.budget_per_run_usd:.2f} limit. "
+                "Increase gemini_budget_per_run_usd in config or .env to continue."
+            )
 
         while (
             self._tokens_this_window + estimated_tokens > self.max_tokens_per_minute
@@ -105,7 +112,11 @@ class GeminiClient:
 
     def __init__(self, rate_limiter: GeminiRateLimiter | None = None) -> None:
         settings = get_settings()
-        self._client = genai.Client(api_key=settings.gemini_api_key)
+        # Use v1beta endpoint — required for preview models; also avoids regional quota issues
+        self._client = genai.Client(
+            api_key=settings.gemini_api_key,
+            http_options={"api_version": "v1beta"},
+        )
         self._model = settings.gemini_model
         self._embedding_model = settings.gemini_embedding_model
         self.rate_limiter = rate_limiter or GeminiRateLimiter(

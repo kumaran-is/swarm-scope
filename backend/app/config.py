@@ -8,12 +8,12 @@ class Settings(BaseSettings):
 
     # Gemini
     gemini_api_key: str = "not-set"
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-2.5-flash"
     gemini_embedding_model: str = "text-embedding-004"
     gemini_max_tokens_per_minute: int = 1_000_000
     gemini_max_requests_per_minute: int = 60
-    gemini_budget_per_run_usd: float = 5.00
-    gemini_budget_per_ensemble_usd: float = 25.00
+    gemini_budget_per_run_usd: float = 2.00
+    gemini_budget_per_ensemble_usd: float = 10.00
 
     # External Data Ingestion
     news_api_key: str = ""
