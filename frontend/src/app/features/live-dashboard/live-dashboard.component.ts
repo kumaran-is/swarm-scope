@@ -129,6 +129,7 @@ export class LiveDashboardComponent implements OnInit, OnDestroy {
   lastTick = signal<Tick | null>(null);
   recentEvents = signal<string[]>([]);
   simStatus = signal<string>('pending');
+  maxTicks = signal<number>(15);
   wsConnected = this.ws.connected;
 
   private prevKpiValues: Record<string, number> = {};
@@ -162,7 +163,7 @@ export class LiveDashboardComponent implements OnInit, OnDestroy {
       switchMap(() => this.simService.get(this.simId)),
       takeWhile((run) => run.status !== 'completed' && run.status !== 'failed', true),
     ).subscribe({
-      next: (run) => this.simStatus.set(run.status),
+      next: (run) => { this.simStatus.set(run.status); this.maxTicks.set(run.max_ticks); },
       error: () => {},
     });
   }
