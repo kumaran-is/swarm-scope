@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     # Gemini
     gemini_api_key: str = "not-set"
-    gemini_model: str = "gemini-2.5-pro"
+    gemini_model: str = "gemini-3.0-pro"
     gemini_embedding_model: str = "text-embedding-004"
     gemini_max_tokens_per_minute: int = 1_000_000
     gemini_max_requests_per_minute: int = 60

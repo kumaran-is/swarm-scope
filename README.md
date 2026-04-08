@@ -25,8 +25,8 @@ A multi-agent scenario simulation platform powered by Google Gemini. Upload a so
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Python 3.12, FastAPI, SQLAlchemy 2.0 async, Alembic |
-| AI | Google Gemini 2.5 Pro (structured output + function calling + embeddings) |
+| Backend | Python 3.14, FastAPI, SQLAlchemy 2.0 async, Alembic |
+| AI | Google Gemini 3.0 Pro (structured output + function calling + embeddings) |
 | Database | PostgreSQL 17 + Redis 7 |
 | Frontend | Angular 21 (standalone components, Signals, D3.js) |
 | Infrastructure | Docker Compose, nginx |
@@ -37,7 +37,7 @@ A multi-agent scenario simulation platform powered by Google Gemini. Upload a so
 
 - Docker + Docker Compose
 - Node.js 22+
-- Python 3.12+ with `uv`
+- Python 3.14+ with `uv`
 - Google Gemini API key
 
 ---
