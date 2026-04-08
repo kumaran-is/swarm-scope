@@ -1,14 +1,21 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SimulationService, SimulationRun } from '../../core/services/simulation.service';
 
 @Component({
   selector: 'app-simulation-control',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, RouterModule],
   template: `
     <div class="max-w-2xl mx-auto py-12 px-4">
+      <div class="text-sm breadcrumbs mb-4">
+        <ul>
+          <li><a routerLink="/scenarios">Scenarios</a></li>
+          <li><a [routerLink]="['/scenarios', scenarioId, 'world']">World Model</a></li>
+          <li>Simulation Control</li>
+        </ul>
+      </div>
       <h1 class="text-2xl font-bold mb-6">Simulation Control</h1>
 
       @if (run()) {

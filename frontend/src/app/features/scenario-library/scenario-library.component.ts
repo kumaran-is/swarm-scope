@@ -221,10 +221,12 @@ export class ScenarioLibraryComponent implements OnInit {
 
   navigate(s: Scenario): void {
     const order = this.statusOrder[s.status] ?? 0;
-    if (order >= 2) {
+    if (order >= 4) {
+      this.router.navigate(['/simulations', s.id, 'control']);
+    } else if (order >= 2) {
       this.router.navigate(['/scenarios', s.id, 'world']);
     } else {
-      this.router.navigate(['/scenarios']);
+      this.router.navigate(['/scenarios/new']);
     }
   }
 

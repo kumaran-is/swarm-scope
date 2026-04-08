@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { interval, Subscription, switchMap, take, catchError, EMPTY } from 'rxjs';
 import { ScenarioService } from '../../core/services/scenario.service';
@@ -10,9 +10,15 @@ const MAX_RETRIES = 30;
 @Component({
   selector: 'app-world-editor',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="world-editor">
+      <div class="text-sm breadcrumbs mb-4">
+        <ul>
+          <li><a routerLink="/scenarios">Scenarios</a></li>
+          <li>World Model Editor</li>
+        </ul>
+      </div>
       <h1>World Model Editor</h1>
       @if (loading()) {
         <div class="flex flex-col items-center gap-3 py-12">
