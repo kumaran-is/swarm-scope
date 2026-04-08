@@ -21,6 +21,38 @@ A multi-agent scenario simulation platform powered by Google Gemini. Upload a so
 4. **The simulation runs tick by tick:**
    - Each tick, every agent reads the current world state and decides what to do (negotiate, protest, publish, lobby, defect…)
    - Their actions change the world state — resources shift, relationships sour or strengthen, KPIs move
+
+### Where does the World State come from?
+
+The world state is **not pulled from external sources** — it is entirely derived from your document and then evolved by agent actions. Nothing is fetched from the internet.
+
+**Initial world state** — extracted by Gemini from your document:
+```
+Your document says: "Oil reserves are at 60% capacity, unions are increasingly hostile"
+                           ↓  Gemini extracts
+Initial world state:
+  resources.oil_reserves   = 0.60
+  relationships.union_mgmt = hostile  (-0.7)
+  kpis.social_stability    = 0.45
+```
+
+**How KPIs and state change each tick** — purely from agent actions:
+```
+Agent (Union Leader) decides: "Call a strike"
+  → This action has a delta:
+      resources.productivity     -0.12
+      relationships.union_mgmt   -0.15  (more hostile)
+      kpis.social_stability      -0.08
+
+Agent (CEO) decides: "Issue public statement"
+  → This action has a delta:
+      kpis.public_trust          +0.05
+      relationships.media_corp   +0.10
+
+All deltas merged → new world state for next tick
+```
+
+**No outside data unless you opt in** — the optional Live Data Ingestion feature lets you pipe in real webhook events (news APIs, RSS feeds). Gemini summarizes each event into an intervention that nudges the world state. But even then, agents are still fictional characters — they just react to real-world inputs.
    - The new world state becomes the input for the next tick
 5. **You watch it live** — a real-time dashboard streams each tick as it happens
 6. **You can intervene** — inject events, change KPIs, or issue directives to agents mid-simulation
@@ -135,6 +167,86 @@ Tick 10: [Agent A] → [Agent B] → [Agent C] → [Agent D] → [Agent E]   (5 
 **Recommended starting values:** 5–10 agents, 5–10 ticks while testing. Scale up once your scenario and document are validated.
 
 ---
+
+## Architecture Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        USER (Browser)                               │
+│              Angular 21  ·  Signals  ·  D3.js                      │
+└────────┬──────────────────────────────────────────┬─────────────────┘
+         │  REST / WebSocket                         │  Auth (JWT)
+         ▼                                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      FastAPI Backend  (port 8000)                   │
+│                                                                     │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
+│  │  REST API   │  │  WebSocket   │  │   Background Workers     │   │
+│  │  /api/v1/*  │  │  /ws/{id}    │  │  simulation · report ·   │   │
+│  └──────┬──────┘  └──────┬───────┘  │  ingestion               │   │
+│         │                │          └──────────┬───────────────┘   │
+│         └────────────────┴───────────────────┐ │                   │
+│                                              ▼ ▼                   │
+│                          ┌───────────────────────────┐             │
+│                          │     Simulation Engine      │             │
+│                          │                           │             │
+│                          │  World Compiler            │             │
+│                          │  Agent Generator           │             │
+│                          │  Orchestrator (tick loop)  │             │
+│                          │  ┌─────────────────────┐  │             │
+│                          │  │  Each Tick:          │  │             │
+│                          │  │  1. Activation score │  │             │
+│                          │  │  2. Rule engine      │  │             │
+│                          │  │  3. Gemini decisions │  │             │
+│                          │  │  4. State update     │  │             │
+│                          │  │  5. Memory compress  │  │             │
+│                          │  │  6. KPI check        │  │             │
+│                          │  │  7. Snapshot + log   │  │             │
+│                          │  └─────────────────────┘  │             │
+│                          │  Influence Tracker         │             │
+│                          │  Fork Manager              │             │
+│                          │  Ensemble Runner           │             │
+│                          └────────────┬──────────────┘             │
+│                                       │                             │
+│                          ┌────────────▼──────────────┐             │
+│                          │      Gemini Layer          │             │
+│                          │  client · rate limiter     │             │
+│                          │  extraction · decisions    │             │
+│                          │  embeddings · reporting    │             │
+│                          └────────────┬──────────────┘             │
+└───────────────────────────────────────┼─────────────────────────────┘
+                                        │  google-genai SDK
+                                        ▼
+                          ┌─────────────────────────┐
+                          │    Google Gemini API     │
+                          │   (structured output +   │
+                          │  function calling +      │
+                          │     embeddings)          │
+                          └─────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Data Layer                                   │
+│                                                                     │
+│   ┌──────────────────────────┐     ┌──────────────────────────┐    │
+│   │      PostgreSQL 17       │     │         Redis 7           │    │
+│   │                          │     │                          │    │
+│   │  scenarios · agents      │     │  simulation state cache  │    │
+│   │  simulation_runs · ticks │     │  WebSocket pub/sub       │    │
+│   │  reports · ensembles     │     │  rate limit counters     │    │
+│   │  influence_edges         │     │                          │    │
+│   │  surveys · ingestion     │     └──────────────────────────┘    │
+│   └──────────────────────────┘                                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                   External Data Ingestion (optional)                │
+│                                                                     │
+│   Webhooks ──►  /api/v1/webhooks/ingest/{source_id}                │
+│   Scheduled pulls (news APIs, RSS) ──► ingestion_worker            │
+│                    ↓                                                │
+│          Gemini summarizes event → auto-Intervention                │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ## Architecture Overview
 
