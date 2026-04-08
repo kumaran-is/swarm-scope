@@ -3,7 +3,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/swarm-scope)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 [![Angular 21](https://img.shields.io/badge/angular-21-red.svg)](https://angular.dev/)
-[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-3.0%20Pro-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-2.0%20Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
@@ -100,7 +100,7 @@ Report (executive summary + timeline + influence graph)
 | Layer | Technology |
 |-------|-----------|
 | Backend | Python 3.14, FastAPI, SQLAlchemy 2.0 async, Alembic |
-| AI | Google Gemini 3.0 Pro (structured output + function calling + embeddings) |
+| AI | Google Gemini 2.0 Flash (structured output + function calling + embeddings) |
 | Database | PostgreSQL 17 + Redis 7 |
 | Frontend | Angular 21 (standalone components, Signals, D3.js) |
 | Infrastructure | Docker Compose, nginx |
