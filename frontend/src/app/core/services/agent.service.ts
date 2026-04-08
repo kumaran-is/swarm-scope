@@ -17,6 +17,7 @@ export interface Agent {
   semantic_memory: Record<string, unknown>;
   activation_score: number;
   is_active: boolean;
+  is_chat_enabled: boolean;
 }
 
 export interface ChatMessage {

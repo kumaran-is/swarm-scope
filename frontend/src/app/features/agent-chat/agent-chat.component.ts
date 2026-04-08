@@ -30,7 +30,7 @@ import { AgentService, Agent, ChatMessage } from '../../core/services/agent.serv
             <span class="activation" [style.width.%]="agent.activation_score * 100"></span>
           </button>
         } @empty {
-          <p class="empty-state">No agents loaded.</p>
+          <p class="empty-state">No chat-enabled agents. Run a simulation first.</p>
         }
       </aside>
 
@@ -109,7 +109,7 @@ export class AgentChatComponent implements OnInit {
   ngOnInit(): void {
     this.simId = this.route.snapshot.paramMap.get('id') ?? '';
     this.agentService.list(this.simId).subscribe({
-      next: (agents) => this.agents.set(agents.slice(0, 10)),
+      next: (agents) => this.agents.set(agents.filter(a => a.is_chat_enabled)),
       error: (err) => console.error('Failed to load agents', err),
     });
   }
