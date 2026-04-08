@@ -45,10 +45,15 @@ const MAX_RETRIES = 30;
             <div>{{ t.between.join(' vs ') }} — Intensity {{ t.intensity }}/10: {{ t.description }}</div>
           }
         </section>
-        <div class="actions">
-          <button (click)="save()">Save Changes</button>
-          <button (click)="generateAgents()" [disabled]="generating()">
-            {{ generating() ? 'Generating Agents...' : 'Generate Agents' }}
+        <div class="flex gap-3 mt-6">
+          <button class="btn btn-outline btn-sm" (click)="save()">Save Changes</button>
+          <button class="btn btn-primary" (click)="generateAgents()" [disabled]="generating()">
+            @if (generating()) {
+              <span class="loading loading-spinner loading-sm"></span>
+              Generating Agents...
+            } @else {
+              Generate Agents
+            }
           </button>
         </div>
       }

@@ -8,30 +8,42 @@ import { SimulationService, SimulationRun } from '../../core/services/simulation
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="sim-control">
-      <h1>Simulation Control</h1>
+    <div class="max-w-2xl mx-auto py-12 px-4">
+      <h1 class="text-2xl font-bold mb-6">Simulation Control</h1>
+
       @if (run()) {
-        <div class="status-bar">
-          <span>Status: <strong>{{ run()!.status }}</strong></span>
+        <div class="flex gap-6 mb-6 bg-base-200 rounded-lg p-4">
+          <span>Status: <strong class="text-primary">{{ run()!.status }}</strong></span>
           <span>Tick: {{ run()!.current_tick }} / {{ run()!.max_ticks }}</span>
         </div>
-        <div class="controls">
-          <button (click)="start()" [disabled]="run()!.status === 'running'">Start</button>
-          <button (click)="pause()" [disabled]="run()!.status !== 'running'">Pause</button>
-          <button (click)="resume()" [disabled]="run()!.status !== 'paused'">Resume</button>
-          <button (click)="stop()">Stop</button>
+        <div class="flex gap-3 mb-8">
+          <button class="btn btn-primary" (click)="start()" [disabled]="run()!.status === 'running'">Start</button>
+          <button class="btn btn-outline" (click)="pause()" [disabled]="run()!.status !== 'running'">Pause</button>
+          <button class="btn btn-outline" (click)="resume()" [disabled]="run()!.status !== 'paused'">Resume</button>
+          <button class="btn btn-error btn-outline" (click)="stop()">Stop</button>
         </div>
-        <div class="nav-links">
-          <a [routerLink]="['/simulations', run()!.id, 'dashboard']">Live Dashboard</a>
-          <a [routerLink]="['/simulations', run()!.id, 'intervene']">Interventions</a>
-          <a [routerLink]="['/simulations', run()!.id, 'chat']">Agent Chat</a>
-          <a [routerLink]="['/simulations', run()!.id, 'report']">Report</a>
+        <div class="flex gap-4 flex-wrap">
+          <a class="btn btn-ghost btn-sm" [routerLink]="['/simulations', run()!.id, 'dashboard']">Live Dashboard</a>
+          <a class="btn btn-ghost btn-sm" [routerLink]="['/simulations', run()!.id, 'intervene']">Interventions</a>
+          <a class="btn btn-ghost btn-sm" [routerLink]="['/simulations', run()!.id, 'chat']">Agent Chat</a>
+          <a class="btn btn-ghost btn-sm" [routerLink]="['/simulations', run()!.id, 'report']">Report</a>
         </div>
       }
+
       @if (!run() && !loading()) {
-        <button (click)="createRun()">Start Simulation</button>
+        <p class="text-base-content/60 mb-6">Agent generation is running in the background. You can start the simulation now — it will wait for agents to be ready.</p>
+        <button class="btn btn-primary btn-lg" (click)="createRun()">
+          Start Simulation
+        </button>
       }
-      @if (error()) { <p class="error">{{ error() }}</p> }
+
+      @if (loading()) {
+        <span class="loading loading-spinner loading-md"></span>
+      }
+
+      @if (error()) {
+        <div class="alert alert-error mt-4">{{ error() }}</div>
+      }
     </div>
   `,
 })
