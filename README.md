@@ -13,6 +13,39 @@ A multi-agent scenario simulation platform powered by Google Gemini. Upload a so
 
 ---
 
+## In a Nutshell — How It Works
+
+1. **Upload a document** — a policy brief, org chart, news article, crisis report, anything
+2. **Gemini reads it** and extracts a structured world: entities, factions, resources, tensions, and KPIs
+3. **Agents are generated** — each is a character from that world with a name, role, personality, goals, and starting resources
+4. **The simulation runs tick by tick:**
+   - Each tick, every agent reads the current world state and decides what to do (negotiate, protest, publish, lobby, defect…)
+   - Their actions change the world state — resources shift, relationships sour or strengthen, KPIs move
+   - The new world state becomes the input for the next tick
+5. **You watch it live** — a real-time dashboard streams each tick as it happens
+6. **You can intervene** — inject events, change KPIs, or issue directives to agents mid-simulation
+7. **A report is generated** — Gemini writes an executive summary, causal timeline, and influence graph when the run ends
+
+```
+Your document
+    ↓ Gemini extracts
+World Model (entities, factions, resources, KPIs)
+    ↓ Gemini generates
+Agent Population (5–100 characters with goals & personalities)
+    ↓ Simulation runs
+Tick 1 → agents act → world updates
+Tick 2 → agents react → world updates
+...
+Tick N → Final state
+    ↓ Gemini writes
+Report (executive summary + timeline + influence graph)
+```
+
+> **LLM cost:** `agents × ticks` Gemini calls for decisions + ~8 overhead calls.
+> Start small: 5 agents × 10 ticks ≈ 58 total calls.
+
+---
+
 ## Key Features
 
 1. **Gemini-Powered Agents** — Every agent decision is a structured Gemini call with function calling
@@ -75,6 +108,31 @@ cd frontend
 npm install
 npm start
 ```
+
+---
+
+## Simulation Parameters
+
+### Agents and Ticks
+
+| Parameter | What it controls |
+|-----------|-----------------|
+| **Max Agents** | How many characters Gemini generates from your document (e.g. CEO, regulator, journalist) |
+| **Max Ticks** | How many rounds the simulation runs — each round every agent perceives the world and decides what to do |
+| **Random Seed** | The starting number for all random decisions — same seed = identical simulation every time (reproducible replay) |
+
+**LLM call cost:** Each tick, every agent makes one Gemini call. Total calls = `agents × ticks` plus ~5–10 overhead calls for world extraction, agent generation, memory compression, and report generation.
+
+```
+Example: 5 agents × 10 ticks = 50 agent decision calls + ~8 overhead ≈ 58 total Gemini calls
+
+Tick 1:  [Agent A] → [Agent B] → [Agent C] → [Agent D] → [Agent E]   (5 calls)
+Tick 2:  [Agent A] → [Agent B] → [Agent C] → [Agent D] → [Agent E]   (5 calls)
+...
+Tick 10: [Agent A] → [Agent B] → [Agent C] → [Agent D] → [Agent E]   (5 calls)
+```
+
+**Recommended starting values:** 5–10 agents, 5–10 ticks while testing. Scale up once your scenario and document are validated.
 
 ---
 
