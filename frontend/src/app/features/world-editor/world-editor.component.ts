@@ -1,7 +1,11 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { interval, Subscription, switchMap, take, catchError, EMPTY } from 'rxjs';
 import { ScenarioService } from '../../core/services/scenario.service';
+
+const POLL_INTERVAL_MS = 2000;
+const MAX_RETRIES = 30;
 
 @Component({
   selector: 'app-world-editor',
@@ -10,7 +14,12 @@ import { ScenarioService } from '../../core/services/scenario.service';
   template: `
     <div class="world-editor">
       <h1>World Model Editor</h1>
-      @if (loading()) { <p>Loading world model...</p> }
+      @if (loading()) {
+        <div class="flex flex-col items-center gap-3 py-12">
+          <span class="loading loading-spinner loading-lg text-primary"></span>
+          <p class="text-base-content/60">Extracting world model via Gemini&hellip; ({{ pollAttempt() }}/{{ maxRetries }})</p>
+        </div>
+      }
       @if (world()) {
         <section>
           <h2>Summary</h2>
@@ -47,23 +56,58 @@ import { ScenarioService } from '../../core/services/scenario.service';
     </div>
   `,
 })
-export class WorldEditorComponent implements OnInit {
+export class WorldEditorComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private svc = inject(ScenarioService);
+
+  readonly maxRetries = MAX_RETRIES;
 
   scenarioId = '';
   world = signal<any>(null);
   loading = signal(true);
   generating = signal(false);
   error = signal('');
+  pollAttempt = signal(0);
+
+  private pollSub: Subscription | null = null;
 
   ngOnInit(): void {
     this.scenarioId = this.route.snapshot.paramMap.get('id') ?? '';
-    this.svc.getWorldModel(this.scenarioId).subscribe({
-      next: (w) => { this.world.set(w); this.loading.set(false); },
-      error: (e) => { this.error.set(e.message); this.loading.set(false); },
-    });
+    this.startPolling();
+  }
+
+  ngOnDestroy(): void {
+    this.pollSub?.unsubscribe();
+  }
+
+  private startPolling(): void {
+    this.pollSub = interval(POLL_INTERVAL_MS)
+      .pipe(
+        take(MAX_RETRIES),
+        switchMap(() => {
+          this.pollAttempt.update(n => n + 1);
+          return this.svc.getWorldModel(this.scenarioId).pipe(
+            catchError(() => EMPTY), // swallow per-request errors; keep polling
+          );
+        }),
+      )
+      .subscribe({
+        next: (w) => {
+          if (w) {
+            this.world.set(w);
+            this.loading.set(false);
+            this.pollSub?.unsubscribe();
+          }
+        },
+        complete: () => {
+          // All retries exhausted without a successful response
+          if (!this.world()) {
+            this.error.set('World model not found after waiting. The extraction may have failed — please try recompiling.');
+            this.loading.set(false);
+          }
+        },
+      });
   }
 
   save(): void {

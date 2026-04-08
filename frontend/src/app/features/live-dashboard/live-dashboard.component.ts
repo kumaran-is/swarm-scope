@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, inject, signal, effect } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Subscription, interval } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { SimulationService, Tick } from '../../core/services/simulation.service';
 
@@ -25,16 +27,35 @@ interface KpiEntry {
       </header>
 
       <section class="kpi-grid">
-        @for (kpi of kpis(); track kpi.name) {
-          <div class="kpi-card">
-            <div class="kpi-name">{{ kpi.name }}</div>
-            <div class="kpi-value">{{ kpi.value | number: '1.1-1' }}</div>
-            <div class="kpi-trend" [class]="kpi.trend">
-              {{ kpi.trend === 'up' ? '↑' : kpi.trend === 'down' ? '↓' : '→' }}
-            </div>
+        @if (simStatus() === 'failed') {
+          <div class="error-state">
+            <p>Simulation failed to start. The backend could not load the world model or agents.</p>
+            <p class="error-hint">Try re-generating agents and starting a new simulation.</p>
           </div>
-        } @empty {
-          <p class="empty-state">Waiting for simulation data...</p>
+        } @else if (simStatus() === 'pending' || simStatus() === 'running') {
+          @for (kpi of kpis(); track kpi.name) {
+            <div class="kpi-card">
+              <div class="kpi-name">{{ kpi.name }}</div>
+              <div class="kpi-value">{{ kpi.value | number: '1.1-1' }}</div>
+              <div class="kpi-trend" [class]="kpi.trend">
+                {{ kpi.trend === 'up' ? '↑' : kpi.trend === 'down' ? '↓' : '→' }}
+              </div>
+            </div>
+          } @empty {
+            <p class="empty-state">Waiting for simulation data... (status: {{ simStatus() }})</p>
+          }
+        } @else {
+          @for (kpi of kpis(); track kpi.name) {
+            <div class="kpi-card">
+              <div class="kpi-name">{{ kpi.name }}</div>
+              <div class="kpi-value">{{ kpi.value | number: '1.1-1' }}</div>
+              <div class="kpi-trend" [class]="kpi.trend">
+                {{ kpi.trend === 'up' ? '↑' : kpi.trend === 'down' ? '↓' : '→' }}
+              </div>
+            </div>
+          } @empty {
+            <p class="empty-state">Waiting for simulation data...</p>
+          }
         }
       </section>
 
@@ -79,6 +100,8 @@ interface KpiEntry {
     .event-log ul { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; }
     .event-item { padding: 0.4rem 0.75rem; border-bottom: 1px solid #2a2a3e; font-size: 0.85rem; font-family: monospace; }
     .empty-state { color: #888; font-style: italic; }
+    .error-state { grid-column: 1 / -1; background: #3e1e1e; border: 1px solid #f44336; border-radius: 8px; padding: 1.5rem; color: #ff8a80; }
+    .error-hint { font-size: 0.85rem; color: #888; margin-top: 0.5rem; }
   `],
 })
 export class LiveDashboardComponent implements OnInit, OnDestroy {
@@ -90,9 +113,11 @@ export class LiveDashboardComponent implements OnInit, OnDestroy {
   kpis = signal<KpiEntry[]>([]);
   lastTick = signal<Tick | null>(null);
   recentEvents = signal<string[]>([]);
+  simStatus = signal<string>('pending');
   wsConnected = this.ws.connected;
 
   private prevKpiValues: Record<string, number> = {};
+  private statusPollSub?: Subscription;
 
   constructor() {
     effect(() => {
@@ -116,10 +141,20 @@ export class LiveDashboardComponent implements OnInit, OnDestroy {
       },
       error: (err) => console.error('Failed to load ticks', err),
     });
+
+    // Poll simulation status — stop once terminal state reached
+    this.statusPollSub = interval(3000).pipe(
+      switchMap(() => this.simService.get(this.simId)),
+      takeWhile((run) => run.status !== 'completed' && run.status !== 'failed', true),
+    ).subscribe({
+      next: (run) => this.simStatus.set(run.status),
+      error: () => {},
+    });
   }
 
   ngOnDestroy(): void {
     this.ws.disconnect();
+    this.statusPollSub?.unsubscribe();
   }
 
   private processTick(tick: Tick): void {

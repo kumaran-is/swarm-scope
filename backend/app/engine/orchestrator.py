@@ -95,14 +95,42 @@ class SimulationOrchestrator:
             simulation_run.max_ticks,
         )
 
-        # Load world state
+        # Load world state — retry up to 90s for async agent generation to complete
         world_model = await self._load_world_model(simulation_run.scenario_id)
         agents = await self._load_agents(simulation_run.scenario_id)
 
         if not world_model or not agents:
-            logger.error("Cannot run simulation %s — missing world model or agents", run_id)
-            await self._update_run_status(simulation_run, "failed")
-            return
+            logger.info(
+                "Simulation %s waiting for world model / agents (scenario %s) — will retry for up to 90s",
+                run_id,
+                simulation_run.scenario_id,
+            )
+            for attempt in range(18):  # 18 × 5s = 90s
+                await asyncio.sleep(5)
+                if not world_model:
+                    world_model = await self._load_world_model(simulation_run.scenario_id)
+                if not agents:
+                    agents = await self._load_agents(simulation_run.scenario_id)
+                if world_model and agents:
+                    logger.info(
+                        "Simulation %s: world model and agents ready after %ds",
+                        run_id,
+                        (attempt + 1) * 5,
+                    )
+                    break
+                logger.info(
+                    "Simulation %s: still waiting (attempt %d/18, world=%s, agents=%d)",
+                    run_id,
+                    attempt + 1,
+                    "ready" if world_model else "missing",
+                    len(agents),
+                )
+            else:
+                logger.error(
+                    "Cannot run simulation %s — world model or agents not ready after 90s", run_id
+                )
+                await self._update_run_status(simulation_run, "failed")
+                return
 
         # Initialize world state dict from ORM model
         world_state: dict[str, Any] = {

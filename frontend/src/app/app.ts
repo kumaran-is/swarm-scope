@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { ToastComponent } from './shared/components/toast/toast.component';
+import { AuthState } from './core/state/auth.state';
 
 @Component({
   selector: 'app-root',
@@ -23,7 +24,11 @@ import { ToastComponent } from './shared/components/toast/toast.component';
           </ul>
         </div>
         <div class="navbar-end gap-2">
-          <a routerLink="/auth/login" class="btn btn-outline btn-sm btn-primary">Sign in</a>
+          @if (auth.isAuthenticated()) {
+            <button (click)="signOut()" class="btn btn-ghost btn-sm">Sign out</button>
+          } @else {
+            <a routerLink="/auth/login" class="btn btn-outline btn-sm btn-primary">Sign in</a>
+          }
         </div>
       </nav>
       <main class="container mx-auto px-4 py-8 max-w-6xl">
@@ -33,4 +38,12 @@ import { ToastComponent } from './shared/components/toast/toast.component';
     </div>
   `,
 })
-export class App {}
+export class App {
+  auth = inject(AuthState);
+  private router = inject(Router);
+
+  signOut(): void {
+    this.auth.clearTokens();
+    this.router.navigate(['/auth/login']);
+  }
+}

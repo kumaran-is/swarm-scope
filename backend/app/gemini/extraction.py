@@ -20,14 +20,14 @@ class EntitySchema(BaseModel):
     name: str
     type: str
     description: str
-    attributes: dict = {}
+    attributes: list[str] = []
 
 
 class FactionSchema(BaseModel):
     name: str
     goals: list[str]
     resources: list[str]
-    relationships: dict = {}
+    relationships: list[str] = []
 
 
 class ResourceSchema(BaseModel):

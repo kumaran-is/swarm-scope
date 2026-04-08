@@ -119,3 +119,4 @@ firebase-debug.log
 docker-compose.override.yml
 
 blackbox/
+.playwright-cli/
