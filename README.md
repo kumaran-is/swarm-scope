@@ -9,6 +9,8 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
+![SwarmScope Hero](img/hero.png)
+
 A multi-agent scenario simulation platform powered by Google Gemini. Upload a source document, compile a world model, spawn an agent population, and watch them interact across hundreds of ticks — with real-time dashboards, interventions, surveys, ensemble statistics, and AI-generated reports.
 
 ---
