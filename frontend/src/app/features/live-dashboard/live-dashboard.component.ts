@@ -17,118 +17,207 @@ interface KpiEntry {
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="dashboard">
-      <header class="dash-header">
-        <h1>Live Dashboard</h1>
-        <span class="sim-id">Sim {{ simId }}</span>
-        <span class="status-badge" [class.connected]="wsConnected()">
-          {{ wsConnected() ? 'Live' : 'Disconnected' }}
+    <div class="animate-fade-up" style="padding: 1.5rem;">
+      <!-- Header -->
+      <header class="flex items-center gap-3 mb-6 flex-wrap">
+        <h1 class="text-2xl font-bold tracking-tight" style="color: var(--ss-text-primary);">Live Dashboard</h1>
+        <span class="px-2 py-0.5 rounded text-xs mono-data" style="color: var(--ss-text-muted);">Sim {{ simId }}</span>
+
+        <!-- Sim status pill -->
+        <span class="px-3 py-1 rounded-full text-xs font-semibold sim-status-pill"
+          [class]="'sim-status-' + simStatus()">
+          {{ simStatus() | uppercase }}
         </span>
+
+        <div class="ml-auto flex items-center gap-2">
+          @if (wsConnected()) {
+            <span class="live-dot"></span>
+            <span class="text-sm font-medium" style="color: var(--ss-success);">Live</span>
+          } @else {
+            <span class="text-sm" style="color: var(--ss-text-muted);">Disconnected</span>
+          }
+        </div>
       </header>
 
-      <section class="kpi-grid">
+      <!-- KPI Grid -->
+      <section class="kpi-grid mb-6">
         @if (simStatus() === 'failed') {
-          <div class="error-state">
-            <p>Simulation failed to start. The backend could not load the world model or agents.</p>
-            <p class="error-hint">Try re-generating agents and starting a new simulation.</p>
+          <div class="kpi-error">
+            <p class="font-medium mb-1">Simulation failed to start.</p>
+            <p class="text-sm" style="color: var(--ss-text-muted);">The backend could not load the world model or agents. Try re-generating agents and starting a new simulation.</p>
           </div>
-        } @else if (simStatus() === 'pending' || simStatus() === 'running') {
-          @for (kpi of kpis(); track kpi.name) {
-            <div class="kpi-card">
-              <div class="kpi-name">{{ kpi.name }}</div>
-              <div class="kpi-value">{{ kpi.value | number: '1.1-1' }}</div>
-              <div class="kpi-trend" [class]="kpi.trend">
-                {{ kpi.trend === 'up' ? '↑' : kpi.trend === 'down' ? '↓' : '→' }}
-              </div>
-            </div>
-          } @empty {
-            <p class="empty-state">Waiting for simulation data... (status: {{ simStatus() }})</p>
-          }
         } @else {
           @for (kpi of kpis(); track kpi.name) {
-            <div class="kpi-card">
-              <div class="kpi-name">{{ kpi.name }}</div>
-              <div class="kpi-value">{{ kpi.value | number: '1.1-1' }}</div>
-              <div class="kpi-trend" [class]="kpi.trend">
+            <div class="glass-card kpi-card">
+              <div class="kpi-name mono-data">{{ kpi.name }}</div>
+              <div class="kpi-value mono-data">{{ kpi.value | number: '1.1-1' }}</div>
+              <div class="kpi-trend" [class]="'trend-' + kpi.trend">
                 {{ kpi.trend === 'up' ? '↑' : kpi.trend === 'down' ? '↓' : '→' }}
+                <span class="trend-label">{{ kpi.trend }}</span>
               </div>
             </div>
           } @empty {
-            <p class="empty-state">Waiting for simulation data...</p>
+            <div class="kpi-waiting">
+              <span class="text-sm" style="color: var(--ss-text-muted);">
+                Waiting for simulation data… ({{ simStatus() }})
+              </span>
+            </div>
           }
         }
       </section>
 
-      <section class="mb-4">
+      <!-- Tick Progress -->
+      <section class="mb-5">
         @if (lastTick(); as tick) {
-          <div class="flex items-center gap-4 bg-base-200 rounded-lg px-4 py-3">
-            <div class="flex items-center gap-2 font-mono font-bold text-primary">
-              <span class="loading loading-ring loading-xs" [class.hidden]="simStatus() === 'completed'"></span>
-              Tick {{ tick.tick_number }} / {{ maxTicks() }}
+          <div class="glass-card p-4">
+            <div class="flex items-center gap-4 flex-wrap">
+              <div class="flex items-center gap-2 mono-data font-bold" style="color: var(--ss-cyan);">
+                @if (simStatus() !== 'completed') {
+                  <span class="live-dot" style="width:6px;height:6px;"></span>
+                }
+                Tick {{ tick.tick_number }} / {{ maxTicks() }}
+              </div>
+
+              <!-- Gradient progress bar -->
+              <div class="flex-1 relative" style="min-width: 120px;">
+                <div class="h-2 rounded-full overflow-hidden" style="background: var(--ss-border);">
+                  <div class="h-full rounded-full transition-all duration-700"
+                    style="background: linear-gradient(90deg, var(--ss-cyan), var(--ss-blue)); box-shadow: 0 0 8px rgba(6,182,212,0.4);"
+                    [style.width.%]="(tick.tick_number / (maxTicks() || 1)) * 100">
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex gap-3 text-xs mono-data" style="color: var(--ss-text-muted);">
+                <span>{{ tick.active_agent_ids?.length ?? 0 }} agents</span>
+                <span>{{ tick.events?.length ?? 0 }} events</span>
+                <span>{{ tick.duration_ms ?? 0 }}ms</span>
+              </div>
             </div>
-            <div class="flex-1">
-              <progress class="progress progress-primary w-full"
-                [value]="tick.tick_number"
-                [max]="maxTicks() || 1">
-              </progress>
-            </div>
-            <span class="text-sm text-base-content/60">{{ tick.active_agent_ids?.length ?? 0 }} agents</span>
-            <span class="text-sm text-base-content/60">{{ tick.events?.length ?? 0 }} events</span>
-            <span class="text-sm text-base-content/60">{{ tick.duration_ms ?? 0 }}ms</span>
           </div>
         } @else {
-          <div class="flex items-center gap-3 bg-base-200 rounded-lg px-4 py-3 text-base-content/50">
-            <span class="loading loading-ring loading-xs"></span>
-            @if (simStatus() === 'pending') {
-              Preparing agents... simulation will start shortly
-            } @else if (simStatus() === 'running') {
-              Running — waiting for first tick data...
-            } @else {
-              Waiting for first tick...
-            }
+          <div class="glass-card p-4 flex items-center gap-3">
+            <div class="w-4 h-4 rounded-full border-2 border-transparent animate-spin"
+              style="border-top-color: var(--ss-cyan);"></div>
+            <span class="text-sm" style="color: var(--ss-text-muted);">
+              @if (simStatus() === 'pending') {
+                Preparing agents... simulation will start shortly
+              } @else if (simStatus() === 'running') {
+                Running — waiting for first tick data...
+              } @else {
+                Waiting for first tick...
+              }
+            </span>
           </div>
         }
       </section>
 
-      <div class="flex gap-3 mb-4">
-        <a class="btn btn-outline btn-sm" [routerLink]="['/simulations', simId, 'report']">View Report</a>
-        <a class="btn btn-ghost btn-sm" [routerLink]="['/simulations', simId, 'intervene']">Interventions</a>
-        <a class="btn btn-ghost btn-sm" [routerLink]="['/simulations', simId, 'chat']">Agent Chat</a>
+      <!-- Nav links -->
+      <div class="flex gap-2 mb-6 flex-wrap">
+        <a class="px-4 py-1.5 rounded-lg text-sm font-medium no-underline transition-all duration-200"
+          style="background: var(--ss-cyan-dim); color: var(--ss-cyan); border: 1px solid rgba(6,182,212,0.2);"
+          [routerLink]="['/simulations', simId, 'report']">View Report</a>
+        <a class="px-4 py-1.5 rounded-lg text-sm font-medium no-underline transition-all duration-200"
+          style="background: var(--ss-bg-card); color: var(--ss-text-secondary); border: 1px solid var(--ss-border);"
+          [routerLink]="['/simulations', simId, 'intervene']">Interventions</a>
+        <a class="px-4 py-1.5 rounded-lg text-sm font-medium no-underline transition-all duration-200"
+          style="background: var(--ss-bg-card); color: var(--ss-text-secondary); border: 1px solid var(--ss-border);"
+          [routerLink]="['/simulations', simId, 'chat']">Agent Chat</a>
       </div>
 
-      <section class="event-log">
-        <h2>Recent Events</h2>
-        <ul>
+      <!-- Event Log -->
+      <section class="glass-card">
+        <div class="px-4 py-3 flex items-center gap-2" style="border-bottom: 1px solid var(--ss-border);">
+          <span class="text-sm font-semibold" style="color: var(--ss-text-primary);">Recent Events</span>
+          <span class="text-xs px-1.5 py-0.5 rounded mono-data"
+            style="background: var(--ss-cyan-dim); color: var(--ss-cyan);">
+            {{ recentEvents().length }}
+          </span>
+        </div>
+        <ul class="event-log-list list-none p-0 m-0">
           @for (event of recentEvents(); track $index) {
-            <li class="event-item">{{ event }}</li>
+            <li class="event-item mono-data">{{ event }}</li>
           } @empty {
-            <li class="empty-state">No events yet.</li>
+            <li class="px-4 py-8 text-center text-sm" style="color: var(--ss-text-muted);">No events yet.</li>
           }
         </ul>
       </section>
     </div>
   `,
   styles: [`
-    .dashboard { padding: 1.5rem; }
-    .dash-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-    .sim-id { color: #888; font-size: 0.9rem; }
-    .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; background: #ccc; font-size: 0.8rem; }
-    .status-badge.connected { background: #4caf50; color: #fff; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .kpi-card { background: #1e1e2e; border-radius: 8px; padding: 1rem; text-align: center; }
-    .kpi-name { font-size: 0.8rem; color: #888; margin-bottom: 0.25rem; }
-    .kpi-value { font-size: 1.8rem; font-weight: 700; }
-    .kpi-trend { font-size: 1.2rem; }
-    .kpi-trend.up { color: #4caf50; }
-    .kpi-trend.down { color: #f44336; }
-    .kpi-trend.flat { color: #888; }
-    .tick-row { display: flex; gap: 2rem; background: #1e1e2e; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
-    .event-log h2 { font-size: 1rem; margin-bottom: 0.5rem; }
-    .event-log ul { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; }
-    .event-item { padding: 0.4rem 0.75rem; border-bottom: 1px solid #2a2a3e; font-size: 0.85rem; font-family: monospace; }
-    .empty-state { color: #888; font-style: italic; }
-    .error-state { grid-column: 1 / -1; background: #3e1e1e; border: 1px solid #f44336; border-radius: 8px; padding: 1.5rem; color: #ff8a80; }
-    .error-hint { font-size: 0.85rem; color: #888; margin-top: 0.5rem; }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+    .kpi-card {
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .kpi-name {
+      font-size: 0.75rem;
+      color: var(--ss-text-muted);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--ss-text-primary);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .kpi-trend {
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .trend-label { font-size: 0.7rem; opacity: 0.8; }
+    .trend-up { color: var(--ss-cyan); }
+    .trend-down { color: var(--ss-error); }
+    .trend-flat { color: var(--ss-text-muted); }
+
+    .kpi-error {
+      grid-column: 1 / -1;
+      background: var(--ss-error-dim);
+      border: 1px solid rgba(244,63,94,0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      color: var(--ss-error);
+    }
+    .kpi-waiting {
+      grid-column: 1 / -1;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .sim-status-pill { }
+    .sim-status-pending { background: var(--ss-warning-dim); color: var(--ss-warning); }
+    .sim-status-running {
+      background: var(--ss-cyan-dim);
+      color: var(--ss-cyan);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    .sim-status-completed { background: var(--ss-success-dim); color: var(--ss-success); }
+    .sim-status-failed { background: var(--ss-error-dim); color: var(--ss-error); }
+
+    .event-log-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .event-item {
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--ss-border);
+      font-size: 0.8rem;
+      color: var(--ss-text-secondary);
+      line-height: 1.5;
+    }
+    .event-item:last-child { border-bottom: none; }
+    .event-item:hover { background: rgba(6,182,212,0.03); color: var(--ss-text-primary); }
   `],
 })
 export class LiveDashboardComponent implements OnInit, OnDestroy {

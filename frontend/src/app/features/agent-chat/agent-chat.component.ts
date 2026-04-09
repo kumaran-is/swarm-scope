@@ -10,89 +10,250 @@ import { AgentService, Agent, ChatMessage } from '../../core/services/agent.serv
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="chat-layout">
-      <aside class="agent-list">
-        <div class="breadcrumbs text-xs px-2 pt-2 pb-1">
-          <ul>
-            <li><a [routerLink]="['/scenarios']">Scenarios</a></li>
-            <li><a [routerLink]="['/simulations', simId, 'dashboard']">Dashboard</a></li>
-            <li>Chat</li>
-          </ul>
+      <!-- Sidebar -->
+      <aside class="agent-sidebar">
+        <div class="px-3 pt-3 pb-2">
+          <div class="breadcrumbs text-xs mb-3">
+            <ul>
+              <li><a [routerLink]="['/scenarios']" style="color: var(--ss-text-muted);">Scenarios</a></li>
+              <li><a [routerLink]="['/simulations', simId, 'dashboard']" style="color: var(--ss-text-muted);">Dashboard</a></li>
+              <li style="color: var(--ss-text-secondary);">Chat</li>
+            </ul>
+          </div>
+          <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ss-text-muted);">Agents</p>
         </div>
-        <h2>Agents</h2>
-        @for (agent of agents(); track agent.id) {
-          <button
-            class="agent-btn"
-            [class.active]="selectedAgent()?.id === agent.id"
-            (click)="selectAgent(agent)"
-          >
-            <span class="agent-name">{{ agent.name }}</span>
-            <span class="agent-role">{{ agent.role }}</span>
-            <span class="activation" [style.width.%]="agent.activation_score * 100"></span>
-          </button>
-        } @empty {
-          <p class="empty-state">No chat-enabled agents. Run a simulation first.</p>
-        }
+
+        <div class="agent-list-scroll">
+          @for (agent of agents(); track agent.id) {
+            <button class="agent-card-btn" [class.agent-card-active]="selectedAgent()?.id === agent.id"
+              (click)="selectAgent(agent)">
+              <!-- Avatar circle -->
+              <div class="agent-avatar">{{ agent.name.charAt(0).toUpperCase() }}</div>
+              <div class="agent-info">
+                <span class="agent-name">{{ agent.name }}</span>
+                <span class="agent-role">{{ agent.role }}</span>
+                <!-- Activation bar -->
+                <div class="activation-track">
+                  <div class="activation-fill" [style.width.%]="agent.activation_score * 100"></div>
+                </div>
+              </div>
+            </button>
+          } @empty {
+            <p class="px-4 py-3 text-xs" style="color: var(--ss-text-muted); font-style: italic;">
+              No chat-enabled agents. Run a simulation first.
+            </p>
+          }
+        </div>
       </aside>
 
+      <!-- Chat Panel -->
       <section class="chat-panel">
         @if (selectedAgent(); as agent) {
           <header class="chat-header">
-            <strong>{{ agent.name }}</strong>
-            <span class="faction">{{ agent.faction ?? 'No faction' }}</span>
+            <div class="agent-avatar-sm">{{ agent.name.charAt(0).toUpperCase() }}</div>
+            <div>
+              <div class="font-semibold text-sm" style="color: var(--ss-text-primary);">{{ agent.name }}</div>
+              <div class="text-xs" style="color: var(--ss-text-muted);">{{ agent.faction ?? 'No faction' }}</div>
+            </div>
           </header>
-          <div class="messages">
+
+          <div class="messages-area">
             @for (msg of messages(); track $index) {
-              <div class="message" [class]="msg.role">
-                <span class="bubble">{{ msg.content }}</span>
+              <div class="message" [class]="'message-' + msg.role">
+                @if (msg.role === 'assistant') {
+                  <div class="msg-label">{{ agent.name }}</div>
+                }
+                <div class="bubble" [class]="'bubble-' + msg.role">{{ msg.content }}</div>
               </div>
             }
             @if (thinking()) {
-              <div class="message assistant">
-                <span class="bubble thinking">Thinking…</span>
+              <div class="message message-assistant">
+                <div class="msg-label">{{ agent.name }}</div>
+                <div class="bubble bubble-assistant thinking-bubble">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </div>
               </div>
             }
           </div>
-          <div class="input-row">
-            <input
-              [(ngModel)]="userInput"
+
+          <div class="input-bar">
+            <input class="chat-input" [(ngModel)]="userInput"
               placeholder="Ask {{ agent.name }} something…"
-              (keyup.enter)="send()"
-            />
-            <button (click)="send()" [disabled]="thinking() || !userInput.trim()">Send</button>
+              (keyup.enter)="send()" />
+            <button class="send-btn" (click)="send()" [disabled]="thinking() || !userInput.trim()">
+              &#8594;
+            </button>
           </div>
         } @else {
-          <div class="no-agent">Select an agent to start chatting.</div>
+          <div class="no-agent-selected">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3"
+              style="background: var(--ss-cyan-dim); border: 1px solid rgba(6,182,212,0.2);">
+              &#128172;
+            </div>
+            <p class="text-sm" style="color: var(--ss-text-muted);">Select an agent to start chatting.</p>
+          </div>
         }
       </section>
     </div>
   `,
   styles: [`
-    .chat-layout { display: flex; height: calc(100vh - 60px); }
-    .agent-list { width: 240px; border-right: 1px solid #2a2a3e; overflow-y: auto; padding: 1rem; }
-    .agent-list h2 { font-size: 0.9rem; color: #888; margin-bottom: 0.75rem; }
-    .agent-btn { width: 100%; background: none; border: none; text-align: left; padding: 0.6rem 0.75rem; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0.25rem; position: relative; overflow: hidden; }
-    .agent-btn.active { background: #2a2a3e; }
-    .agent-btn:hover { background: #1e1e2e; }
-    .agent-name { font-weight: 600; font-size: 0.9rem; color: #fff; }
-    .agent-role { font-size: 0.75rem; color: #888; }
-    .activation { position: absolute; bottom: 0; left: 0; height: 2px; background: #7c3aed; }
-    .chat-panel { flex: 1; display: flex; flex-direction: column; }
-    .chat-header { padding: 1rem 1.5rem; border-bottom: 1px solid #2a2a3e; display: flex; gap: 1rem; align-items: baseline; }
-    .faction { font-size: 0.8rem; color: #888; }
-    .messages { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
-    .message { display: flex; }
-    .message.user { justify-content: flex-end; }
-    .message.assistant { justify-content: flex-start; }
-    .bubble { max-width: 70%; padding: 0.6rem 1rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; }
-    .message.user .bubble { background: #7c3aed; color: #fff; }
-    .message.assistant .bubble { background: #1e1e2e; color: #ccc; }
-    .thinking { opacity: 0.6; font-style: italic; }
-    .input-row { display: flex; gap: 0.5rem; padding: 1rem 1.5rem; border-top: 1px solid #2a2a3e; }
-    .input-row input { flex: 1; background: #1e1e2e; border: 1px solid #444; border-radius: 6px; padding: 0.6rem 1rem; color: inherit; }
-    .input-row button { background: #7c3aed; color: #fff; border: none; border-radius: 6px; padding: 0.6rem 1.2rem; cursor: pointer; }
-    .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .no-agent { flex: 1; display: flex; align-items: center; justify-content: center; color: #888; font-style: italic; }
-    .empty-state { color: #888; font-style: italic; font-size: 0.85rem; }
+    .chat-layout {
+      display: flex;
+      height: calc(100vh - 56px);
+      background: var(--ss-bg-base);
+    }
+    .agent-sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--ss-border);
+      display: flex;
+      flex-direction: column;
+      background: var(--ss-bg-card);
+    }
+    .agent-list-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+    .agent-card-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid transparent;
+      text-align: left;
+      padding: 0.625rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.625rem;
+      margin-bottom: 0.25rem;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .agent-card-btn:hover { background: var(--ss-bg-base); }
+    .agent-card-active {
+      background: var(--ss-cyan-dim) !important;
+      border-color: rgba(6,182,212,0.25) !important;
+    }
+    .agent-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--ss-cyan), var(--ss-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .agent-avatar-sm {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--ss-cyan), var(--ss-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .agent-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .agent-name { font-weight: 600; font-size: 0.85rem; color: var(--ss-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .agent-role { font-size: 0.7rem; color: var(--ss-text-muted); }
+    .activation-track { height: 2px; background: var(--ss-border); border-radius: 1px; margin-top: 4px; }
+    .activation-fill { height: 100%; background: linear-gradient(90deg, var(--ss-cyan), var(--ss-blue)); border-radius: 1px; transition: width 0.5s ease; }
+
+    .chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .chat-header {
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--ss-border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--ss-bg-card);
+    }
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .message { display: flex; flex-direction: column; gap: 3px; }
+    .message-user { align-items: flex-end; }
+    .message-assistant { align-items: flex-start; }
+    .msg-label { font-size: 0.7rem; color: var(--ss-text-muted); padding: 0 4px; }
+    .bubble {
+      max-width: 72%;
+      padding: 0.625rem 0.875rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    .bubble-user {
+      background: linear-gradient(135deg, var(--ss-cyan), var(--ss-blue));
+      color: #fff;
+      border-radius: 12px 12px 4px 12px;
+    }
+    .bubble-assistant {
+      background: var(--ss-bg-card);
+      border: 1px solid var(--ss-border);
+      color: var(--ss-text-primary);
+      border-radius: 12px 12px 12px 4px;
+    }
+    .thinking-bubble {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0.625rem 1rem;
+    }
+
+    .input-bar {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.875rem 1.25rem;
+      border-top: 1px solid var(--ss-border);
+      background: var(--ss-bg-card);
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--ss-bg-base);
+      border: 1px solid var(--ss-border);
+      border-radius: 8px;
+      padding: 0.625rem 0.875rem;
+      font-size: 0.875rem;
+      color: var(--ss-text-primary);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .chat-input:focus { border-color: var(--ss-cyan); }
+    .chat-input::placeholder { color: var(--ss-text-muted); }
+    .send-btn {
+      background: linear-gradient(135deg, var(--ss-cyan), var(--ss-blue));
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.625rem 1.125rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.15s ease, box-shadow 0.15s ease;
+    }
+    .send-btn:hover:not(:disabled) { box-shadow: var(--ss-glow-cyan); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .no-agent-selected {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
   `],
 })
 export class AgentChatComponent implements OnInit {

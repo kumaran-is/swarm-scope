@@ -3,14 +3,246 @@
   themes: dark --default, light;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ============================================================
+   CSS CUSTOM PROPERTIES — SwarmScope Design System
+   ============================================================ */
+:root {
+  /* Core palette */
+  --ss-bg-base: #0a0f1e;
+  --ss-bg-card: #0d1424;
+  --ss-bg-card-hover: #111827;
+  --ss-border: #1e2d45;
+  --ss-border-bright: #2a3f5f;
+
+  /* Brand colors */
+  --ss-cyan: #06b6d4;
+  --ss-cyan-dim: rgba(6, 182, 212, 0.15);
+  --ss-blue: #3b82f6;
+  --ss-blue-dim: rgba(59, 130, 246, 0.12);
+
+  /* Semantic colors */
+  --ss-success: #10b981;
+  --ss-success-dim: rgba(16, 185, 129, 0.15);
+  --ss-warning: #f59e0b;
+  --ss-warning-dim: rgba(245, 158, 11, 0.15);
+  --ss-error: #f43f5e;
+  --ss-error-dim: rgba(244, 63, 94, 0.15);
+
+  /* Typography */
+  --ss-text-primary: #e2e8f0;
+  --ss-text-secondary: #94a3b8;
+  --ss-text-muted: #475569;
+  --ss-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+
+  /* Glow effects */
+  --ss-glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3);
+  --ss-glow-blue: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+/* daisyUI theme overrides */
+[data-theme="dark"] {
+  --color-base-100: var(--ss-bg-base);
+  --color-base-200: var(--ss-bg-card);
+  --color-base-300: #111827;
+  --color-primary: var(--ss-cyan);
+  --color-secondary: var(--ss-blue);
+  --color-accent: #8b5cf6;
+  --color-success: var(--ss-success);
+  --color-warning: var(--ss-warning);
+  --color-error: var(--ss-error);
+  --color-base-content: var(--ss-text-primary);
+  --color-neutral: #1e293b;
+}
+
+/* ============================================================
+   GLOBAL RESET & BASE
+   ============================================================ */
 * {
   box-sizing: border-box;
 }
 
 html {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--ss-bg-base);
+  color: var(--ss-text-primary);
+  scroll-behavior: smooth;
 }
 
 body {
   @apply bg-base-100 text-base-content min-h-screen;
+  background-color: var(--ss-bg-base);
+}
+
+/* ============================================================
+   SCROLLBAR STYLING
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ss-bg-card);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ss-border-bright);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ss-cyan);
+}
+
+/* ============================================================
+   ANIMATION KEYFRAMES
+   ============================================================ */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(6, 182, 212, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(6, 182, 212, 0);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+@keyframes bounce-dot {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   GLASS CARD UTILITY
+   ============================================================ */
+.glass-card {
+  background: var(--ss-bg-card);
+  border: 1px solid var(--ss-border);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--ss-border-bright);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--ss-border-bright);
+}
+
+.glass-card--glow:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), var(--ss-glow-cyan);
+}
+
+/* ============================================================
+   LIVE INDICATOR
+   ============================================================ */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ss-success);
+  animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+/* ============================================================
+   TYPING INDICATOR (3 bouncing dots)
+   ============================================================ */
+.typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ss-cyan);
+  animation: bounce-dot 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* ============================================================
+   FADE-UP ANIMATION CLASS
+   ============================================================ */
+.animate-fade-up {
+  animation: fadeUp 0.4s ease forwards;
+}
+
+/* ============================================================
+   MONO DATA DISPLAY
+   ============================================================ */
+.mono-data {
+  font-family: var(--ss-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   GRADIENT PROGRESS BAR
+   ============================================================ */
+.progress-gradient::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--ss-cyan), var(--ss-blue));
+  border-radius: 4px;
+}
+.progress-gradient::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--ss-cyan), var(--ss-blue));
+  border-radius: 4px;
 }
