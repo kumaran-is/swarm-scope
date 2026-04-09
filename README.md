@@ -143,6 +143,144 @@ npm start
 
 ---
 
+## Running Your First Simulation — Step by Step
+
+This walkthrough takes you from a blank account to a completed simulation in under 10 minutes.
+
+### Step 1 — Register an account
+
+1. Open [http://localhost:4200](http://localhost:4200)
+2. Click **Sign Up** (top right)
+3. Enter any email and password — this is a local account, no verification needed
+4. You'll be redirected to the Scenarios library
+
+---
+
+### Step 2 — Create a source document
+
+Create a file called `scenario.txt` anywhere on your machine with this content:
+
+```
+A seed-stage startup called NovaPay is building a payments API.
+The founding team has 3 members: CEO Sarah (sales background), CTO Marcus (ex-Google engineer), and CPO Leila (product designer).
+They have $180,000 runway left, burning $30,000/month.
+Two investors are circling: Apex Ventures (wants 20% equity) and Bootstrap Fund (wants 15% but lower check size).
+Key tensions: CTO wants to rebuild core infrastructure before scaling; CEO wants to close a Series A immediately.
+A competitor TurboCharge just launched with similar features and raised $5M.
+KPIs to track: runway_months, team_morale, product_completeness, investor_interest.
+```
+
+---
+
+### Step 3 — Create a scenario
+
+1. Click **+ New Scenario** in the Scenarios library
+2. Fill in the form:
+
+| Field | Value |
+|-------|-------|
+| Scenario Name | `Startup Funding Crisis` |
+| Description | `A seed-stage startup faces runway pressure as investors demand traction` |
+| Domain | `general` |
+| Random Seed | `42` |
+| Max Ticks | `5` (slide left to minimum) |
+| Max Agents | `10` (slide left to minimum) |
+
+3. Under **Source Document**, drag and drop your `scenario.txt` file (or click to browse)
+4. Click **Create Scenario**
+
+> The app immediately starts **Compiling World** — Gemini reads your document and extracts entities, factions, and KPIs. This takes **15–30 seconds**.
+
+---
+
+### Step 4 — Review the world model
+
+Once compiling finishes, you're taken to the **World Editor**:
+
+- Review the extracted entities (NovaPay, Apex Ventures, Bootstrap Fund, TurboCharge)
+- Check the KPIs (runway_months, team_morale, product_completeness, investor_interest)
+- Edit anything Gemini got wrong — you can adjust values, add or remove entities
+- Click **Save Changes** when satisfied
+
+---
+
+### Step 5 — Generate agents
+
+1. Click **Generate Agents** in the World Editor
+2. Wait **20–40 seconds** — Gemini creates 10 characters from the world model, each with a name, role, personality, goals, and starting resources
+3. The scenario status updates to **Agents Ready**
+
+---
+
+### Step 6 — Start the simulation
+
+1. Click **Start Simulation** (or navigate back via the breadcrumb and click the scenario card)
+2. On the Simulation Control page, click **Start Simulation**
+3. You're redirected to the **Live Dashboard**
+
+> The simulation runs **5 ticks × 10 agents = 50 Gemini calls**. Each tick takes 15–30 seconds depending on API latency. Watch the progress bar and KPI cards update in real time via WebSocket.
+
+---
+
+### Step 7 — Watch it live
+
+The **Live Dashboard** shows:
+
+- **Tick progress bar** — how far through the simulation you are
+- **KPI cards** — runway_months, team_morale, etc. with up/down trend arrows
+- **Event log** — what happened each tick (negotiations, decisions, conflicts)
+- **Status badge** — Live (WebSocket connected) or Disconnected
+
+---
+
+### Step 8 — Intervene (optional)
+
+Click **Interventions** to inject mid-simulation events while ticks are still running:
+
+| Intervention Type | Example |
+|------------------|---------|
+| **Inject Event** | `TurboCharge announces bankruptcy` |
+| **Modify KPI** | Set `investor_interest` to 90 |
+| **Agent Directive** | Tell Sarah to `prioritize closing Apex Ventures immediately` |
+
+---
+
+### Step 9 — Generate the report
+
+1. Once all 15 ticks complete, click **View Report**
+2. Click **Generate Report**
+3. Wait **30–60 seconds** — Gemini generates an executive summary, narrative, KPI analysis, and strategic recommendations
+4. The report appears automatically when ready
+
+---
+
+### Step 10 — Chat with agents
+
+1. Click **Agent Chat** from the Live Dashboard
+2. Select any agent from the sidebar (top 10 by influence are chat-enabled)
+3. Ask them questions in character:
+   - *"Sarah, how do you feel about the TurboCharge threat?"*
+   - *"Marcus, why are you blocking the Series A?"*
+   - *"David, what would it take to invest?"*
+
+Agents respond based on their personality, goals, and what happened during the simulation.
+
+---
+
+### What to expect
+
+| Stage | Time |
+|-------|------|
+| World compilation | 15–30 seconds |
+| Agent generation | 20–40 seconds |
+| Simulation (5 ticks × 10 agents) | 2–4 minutes |
+| Report generation | 30–60 seconds |
+| Agent chat response | 3–5 seconds per message |
+
+> **Cost estimate:** A 5-tick × 10-agent run costs approximately $0.05–0.15 in Gemini API calls.
+
+---
+
 ## Simulation Parameters
 
 ### Agents and Ticks
