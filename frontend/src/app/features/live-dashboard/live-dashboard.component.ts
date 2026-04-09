@@ -79,10 +79,9 @@ interface KpiEntry {
               </div>
 
               <!-- Gradient progress bar -->
-              <div class="flex-1 relative" style="min-width: 120px;">
-                <div class="h-2 rounded-full overflow-hidden" style="background: var(--ss-border);">
-                  <div class="h-full rounded-full transition-all duration-700"
-                    style="background: linear-gradient(90deg, var(--ss-cyan), var(--ss-blue)); box-shadow: 0 0 8px rgba(6,182,212,0.4);"
+              <div class="flex-1" style="min-width: 160px;">
+                <div style="height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden;">
+                  <div style="height: 100%; border-radius: 999px; background: linear-gradient(90deg, #06b6d4, #3b82f6); box-shadow: 0 0 10px rgba(6,182,212,0.5); transition: width 0.7s ease;"
                     [style.width.%]="(tick.tick_number / (maxTicks() || 1)) * 100">
                   </div>
                 </div>

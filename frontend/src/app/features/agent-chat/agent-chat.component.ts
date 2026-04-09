@@ -180,10 +180,11 @@ import { AgentService, Agent, ChatMessage } from '../../core/services/agent.serv
     .messages-area {
       flex: 1;
       overflow-y: auto;
-      padding: 1.25rem;
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.25rem;
+      background: #070d1a;
     }
     .message { display: flex; flex-direction: column; gap: 3px; }
     .message-user { align-items: flex-end; }
@@ -197,15 +198,17 @@ import { AgentService, Agent, ChatMessage } from '../../core/services/agent.serv
       line-height: 1.5;
     }
     .bubble-user {
-      background: linear-gradient(135deg, var(--ss-cyan), var(--ss-blue));
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
       color: #fff;
       border-radius: 12px 12px 4px 12px;
+      box-shadow: 0 2px 12px rgba(6,182,212,0.3);
     }
     .bubble-assistant {
-      background: var(--ss-bg-card);
-      border: 1px solid var(--ss-border);
-      color: var(--ss-text-primary);
+      background: #1a2540;
+      border: 1px solid rgba(6,182,212,0.2);
+      color: #e2e8f0;
       border-radius: 12px 12px 12px 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .thinking-bubble {
       display: flex;
