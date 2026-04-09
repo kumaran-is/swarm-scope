@@ -131,7 +131,7 @@ export class AgentChatComponent implements OnInit {
     this.agentService.chat(this.simId, agent.id, input).subscribe({
       next: (res) => {
         this.thinking.set(false);
-        this.messages.update((msgs) => [...msgs, { role: 'assistant', content: res.response }]);
+        this.messages.update((msgs) => [...msgs, { role: 'assistant', content: res.message }]);
       },
       error: (err: Error) => {
         this.thinking.set(false);

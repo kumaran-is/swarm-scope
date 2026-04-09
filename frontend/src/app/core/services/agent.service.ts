@@ -37,8 +37,8 @@ export class AgentService {
     return this.api.get<Agent>(`/simulations/${simId}/agents/${agentId}`);
   }
 
-  chat(simId: string, agentId: string, message: string): Observable<{ response: string }> {
-    return this.api.post<{ response: string }>(
+  chat(simId: string, agentId: string, message: string): Observable<{ message: string }> {
+    return this.api.post<{ message: string }>(
       `/simulations/${simId}/agents/${agentId}/chat`,
       { message }
     );
